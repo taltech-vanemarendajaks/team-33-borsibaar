@@ -4,12 +4,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Org = { id: number; name: string };
+type Org = { id: number; name: string; createdAt?: string; updatedAt?: string };
 
 export default function OnboardingPage() {
   const router = useRouter();
 
-  const [orgs, setOrgs] = useState<Org[]>([{ id: 1, name: "TalTech ITÜK" }]); // fallback
+  const [orgs, setOrgs] = useState<Org[]>([{ id: 1, name: "Default Organization" }]); // fallback
   const [organizationId, setOrganizationId] = useState<number | "">("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -23,13 +23,18 @@ export default function OnboardingPage() {
         const r = await fetch("/api/backend/organizations", { credentials: "include" });
         if (r.ok) {
           const list = await r.json();
-          if (Array.isArray(list) && list.length) setOrgs(list);
+          console.log("Loaded organizations:", list);
+          if (Array.isArray(list) && list.length) {
+            setOrgs(list);
+          } else {
+            console.warn("No organizations returned from API");
+          }
         } else {
           // not fatal for onboarding — keep fallback list
           console.warn("Failed to load organizations:", r.status, await r.text());
         }
-      } catch {
-        // ignore in dev, fallback stays
+      } catch (err) {
+        console.error("Error loading organizations:", err);
       } finally {
         setLoadingOrgs(false);
       }
