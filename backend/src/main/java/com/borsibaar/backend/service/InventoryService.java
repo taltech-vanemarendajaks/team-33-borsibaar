@@ -19,11 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,8 +53,11 @@ public class InventoryService {
                     Product product = productRepository.findById(inv.getProductId())
                             .orElse(null);
 
-                    String productName = product != null ? product.getName() : "Unknown Product";
-                    BigDecimal unitPrice = product != null ? product.getBasePrice() : BigDecimal.ZERO;
+                    if (product == null) return null;
+
+                    String productName = product.getName();
+                    BigDecimal unitPrice = Optional.ofNullable(inv.getAdjustedPrice())
+                            .orElse(product.getBasePrice());
 
                     return new InventoryResponseDto(
                             base.id(),
@@ -67,9 +66,12 @@ public class InventoryService {
                             productName,
                             base.quantity(),
                             unitPrice,
+                            product.getBasePrice(),
                             base.updatedAt()
                     );
                 })
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(InventoryResponseDto::productName))
                 .toList();
     }
 
@@ -85,7 +87,13 @@ public class InventoryService {
                 .orElse(null);
 
         String productName = product != null ? product.getName() : "Unknown Product";
-        BigDecimal unitPrice = product != null ? product.getBasePrice() : BigDecimal.ZERO;
+        BigDecimal unitPrice = BigDecimal.ZERO;
+        BigDecimal basePrice = BigDecimal.ZERO;
+        if (product != null) {
+             unitPrice = Optional.ofNullable(inventory.getAdjustedPrice())
+                    .orElse(product.getBasePrice());
+             basePrice = product.getBasePrice();
+        }
 
         return new InventoryResponseDto(
                 base.id(),
@@ -94,6 +102,7 @@ public class InventoryService {
                 productName,
                 base.quantity(),
                 unitPrice,
+                basePrice,
                 base.updatedAt()
         );
     }
@@ -116,8 +125,9 @@ public class InventoryService {
                 .orElseGet(() -> {
                     Inventory newInv = new Inventory();
                     newInv.setOrganizationId(organizationId);
-                    newInv.setProductId(request.productId());
+                    newInv.setProduct(product);
                     newInv.setQuantity(BigDecimal.ZERO);
+                    newInv.setAdjustedPrice(product.getBasePrice());
                     newInv.setCreatedAt(OffsetDateTime.now());
                     newInv.setUpdatedAt(OffsetDateTime.now());
                     return inventoryRepository.save(newInv);
@@ -130,9 +140,11 @@ public class InventoryService {
         inventory.setUpdatedAt(OffsetDateTime.now());
         inventory = inventoryRepository.save(inventory);
 
+        BigDecimal currentPrice = Optional.ofNullable(inventory.getAdjustedPrice()).orElse(product.getBasePrice());
+
         // Create transaction record
-        createTransaction(inventory.getId(), "PURCHASE", request.quantity(),
-                oldQuantity, newQuantity, null, request.notes(), userId);
+        createTransaction(inventory, "PURCHASE", request.quantity(),
+                oldQuantity, newQuantity, currentPrice, currentPrice, null, request.notes(), userId);
 
         InventoryResponseDto base = inventoryMapper.toResponse(inventory);
         return new InventoryResponseDto(
@@ -141,7 +153,8 @@ public class InventoryService {
                 base.productId(),
                 product.getName(),
                 base.quantity(),
-                product.getBasePrice(),
+                currentPrice,
+                null,
                 base.updatedAt()
         );
     }
@@ -176,9 +189,11 @@ public class InventoryService {
         inventory.setUpdatedAt(OffsetDateTime.now());
         inventory = inventoryRepository.save(inventory);
 
+        BigDecimal currentPrice = Optional.ofNullable(inventory.getAdjustedPrice()).orElse(product.getBasePrice());
+
         // Create transaction record (negative quantity change)
-        createTransaction(inventory.getId(), "ADJUSTMENT", request.quantity().negate(),
-                oldQuantity, newQuantity, request.referenceId(), request.notes(), userId);
+        createTransaction(inventory, "ADJUSTMENT", request.quantity().negate(),
+                oldQuantity, newQuantity, currentPrice, currentPrice, request.referenceId(), request.notes(), userId);
 
         InventoryResponseDto base = inventoryMapper.toResponse(inventory);
         return new InventoryResponseDto(
@@ -187,7 +202,8 @@ public class InventoryService {
                 base.productId(),
                 product.getName(),
                 base.quantity(),
-                product.getBasePrice(),
+                currentPrice,
+                null,
                 base.updatedAt()
         );
     }
@@ -216,9 +232,11 @@ public class InventoryService {
         inventory.setUpdatedAt(OffsetDateTime.now());
         inventory = inventoryRepository.save(inventory);
 
+        BigDecimal currentPrice = Optional.ofNullable(inventory.getAdjustedPrice()).orElse(product.getBasePrice());
+
         // Create transaction record
-        createTransaction(inventory.getId(), "ADJUSTMENT", quantityChange,
-                oldQuantity, request.newQuantity(), null, request.notes(), userId);
+        createTransaction(inventory, "ADJUSTMENT", quantityChange,
+                oldQuantity, request.newQuantity(), currentPrice, currentPrice, null, request.notes(), userId);
 
         InventoryResponseDto base = inventoryMapper.toResponse(inventory);
         return new InventoryResponseDto(
@@ -227,7 +245,8 @@ public class InventoryService {
                 base.productId(),
                 product.getName(),
                 base.quantity(),
-                product.getBasePrice(),
+                currentPrice,
+                null,
                 base.updatedAt()
         );
     }
@@ -264,6 +283,8 @@ public class InventoryService {
                             transaction.getQuantityChange(),
                             transaction.getQuantityBefore(),
                             transaction.getQuantityAfter(),
+                            transaction.getPriceBefore(),
+                            transaction.getPriceAfter(),
                             transaction.getReferenceId(),
                             transaction.getNotes(),
                             transaction.getCreatedBy() != null ? transaction.getCreatedBy().toString() : null,
@@ -332,15 +353,18 @@ public class InventoryService {
                 .toList();
     }
 
-    private void createTransaction(Long inventoryId, String type, BigDecimal quantityChange,
+    private void createTransaction(Inventory inventory, String type, BigDecimal quantityChange,
                                    BigDecimal quantityBefore, BigDecimal quantityAfter,
+                                   BigDecimal priceBefore, BigDecimal priceAfter,
                                    String referenceId, String notes, UUID userId) {
         InventoryTransaction transaction = new InventoryTransaction();
-        transaction.setInventoryId(inventoryId);
+        transaction.setInventory(inventory);
         transaction.setTransactionType(type);
         transaction.setQuantityChange(quantityChange);
         transaction.setQuantityBefore(quantityBefore);
         transaction.setQuantityAfter(quantityAfter);
+        transaction.setPriceBefore(priceBefore);
+        transaction.setPriceAfter(priceAfter);
         transaction.setReferenceId(referenceId);
         transaction.setNotes(notes);
         transaction.setCreatedBy(userId);
