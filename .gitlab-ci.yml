@@ -36,11 +36,10 @@ build-frontend:
   script:
     - cd frontend
     - npm ci
-    - npm run build
+    - npm run build:prod
   artifacts:
     paths:
-      - frontend/.next/
-      - frontend/public/
+      - frontend/out/
     expire_in: 1 hour
   only:
     - main
