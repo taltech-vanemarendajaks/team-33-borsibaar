@@ -28,7 +28,6 @@ build-backend:
     expire_in: 1 hour
   only:
     - main
-    - 22-create-a-pipeline-for-the-server
 
 build-frontend:
   stage: build
@@ -43,7 +42,6 @@ build-frontend:
     expire_in: 1 hour
   only:
     - main
-    - 22-create-a-pipeline-for-the-server
 
 deploy-job:
   stage: deploy
@@ -118,4 +116,3 @@ deploy-job:
     url: http://$SERVER_IP
   only:
     - main
-    - 22-create-a-pipeline-for-the-server
