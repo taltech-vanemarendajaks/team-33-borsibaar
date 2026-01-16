@@ -1,15 +1,16 @@
 package com.borsibaar.controller;
 
+import com.borsibaar.annotation.IsOnboardedAdmin;
 import com.borsibaar.dto.BarStationRequestDto;
 import com.borsibaar.dto.BarStationResponseDto;
 import com.borsibaar.entity.User;
 import com.borsibaar.service.BarStationService;
-import com.borsibaar.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,55 +23,41 @@ public class BarStationController {
     private final BarStationService barStationService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<BarStationResponseDto>> getAllStations() {
-        User user = SecurityUtils.getCurrentUser();
-
-        List<BarStationResponseDto> stations = barStationService.getAllStations(user.getOrganizationId());
-        return ResponseEntity.ok(stations);
+    @IsOnboardedAdmin
+    public ResponseEntity<List<BarStationResponseDto>> getAllStations(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(barStationService.getAllStations(user.getOrganizationId()));
     }
 
     @GetMapping("/user")
-    public ResponseEntity<List<BarStationResponseDto>> getUserStations() {
-        User user = SecurityUtils.getCurrentUser();
-        
-        List<BarStationResponseDto> stations = barStationService.getUserStations(user.getId(), user.getOrganizationId());
-        return ResponseEntity.ok(stations);
+    @PreAuthorize("principal.organizationId != null")
+    public ResponseEntity<List<BarStationResponseDto>> getUserStations(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(barStationService.getUserStations(user.getId(), user.getOrganizationId()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BarStationResponseDto> getStationById(@PathVariable Long id) {
-        User user = SecurityUtils.getCurrentUser();
-        
-        BarStationResponseDto station = barStationService.getStationById(user.getOrganizationId(), id);
-        return ResponseEntity.ok(station);
+    @PreAuthorize("principal.organizationId != null")
+    public ResponseEntity<BarStationResponseDto> getStationById(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(barStationService.getStationById(user.getOrganizationId(), id));
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BarStationResponseDto> createStation(@Valid @RequestBody BarStationRequestDto request) {
-        User user = SecurityUtils.getCurrentUser();
-
-        BarStationResponseDto station = barStationService.createStation(user.getOrganizationId(), request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(station);
+    @IsOnboardedAdmin
+    public ResponseEntity<BarStationResponseDto> createStation(@Valid @RequestBody BarStationRequestDto request, @AuthenticationPrincipal User user) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(barStationService.createStation(user.getOrganizationId(), request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @IsOnboardedAdmin
     public ResponseEntity<BarStationResponseDto> updateStation(
             @PathVariable Long id,
-            @Valid @RequestBody BarStationRequestDto request) {
-        User user = SecurityUtils.getCurrentUser();
-
-        BarStationResponseDto station = barStationService.updateStation(user.getOrganizationId(), id, request);
-        return ResponseEntity.ok(station);
+            @Valid @RequestBody BarStationRequestDto request,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(barStationService.updateStation(user.getOrganizationId(), id, request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteStation(@PathVariable Long id) {
-        User user = SecurityUtils.getCurrentUser();
-
+    @IsOnboardedAdmin
+    public ResponseEntity<Void> deleteStation(@PathVariable Long id, @AuthenticationPrincipal User user) {
         barStationService.deleteStation(user.getOrganizationId(), id);
         return ResponseEntity.noContent().build();
     }
