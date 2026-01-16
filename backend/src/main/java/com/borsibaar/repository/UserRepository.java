@@ -22,5 +22,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     List<User> findByOrganizationId(Long organizationId);
 
-    List<User> findByOrganizationIdAndRole(Long organizationId, Role adminRole);
+    boolean existsByOrganizationIdAndRole(Long organizationId, Role adminRole);
 }
