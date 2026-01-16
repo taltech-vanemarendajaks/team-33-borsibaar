@@ -52,27 +52,4 @@ public class SecurityUtils {
 
         return user;
     }
-
-    /**
-     * Checks if the currently authenticated user has the ADMIN role.
-     *
-     * @param user The user to check
-     * @throws ResponseStatusException if user is not an admin
-     */
-    public static void requireAdminRole(User user) {
-        if (user.getRole() == null || !"ADMIN".equals(user.getRole().getName())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin role required");
-        }
-    }
-
-    /**
-     * Checks if the currently authenticated user has the ADMIN role.
-     * Gets the user from the SecurityContext.
-     *
-     * @throws ResponseStatusException if user is not authenticated or not an admin
-     */
-    public static void requireAdminRole() {
-        User user = getCurrentUser();
-        requireAdminRole(user);
-    }
 }
