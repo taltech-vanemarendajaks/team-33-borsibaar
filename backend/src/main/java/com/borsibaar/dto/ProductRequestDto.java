@@ -8,11 +8,20 @@ public record ProductRequestDto(
 
                 @Size(max = 1000, message = "Description must not exceed 1000 characters") String description,
 
-                @NotNull(message = "Current price is required") @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0") BigDecimal currentPrice,
+        @NotNull(message = "Current price is required")
+        @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
+        @Digits(integer = 10, fraction = 2)
+        BigDecimal currentPrice,
 
-                @NotNull(message = "Min price is required") @DecimalMin(value = "0.0", inclusive = false, message = "Min price must be greater than 0") BigDecimal minPrice,
+        @NotNull(message = "Min price is required")
+        @DecimalMin(value = "0.0", inclusive = false, message = "Min price must be greater than 0")
+        @Digits(integer = 10, fraction = 2)
+        BigDecimal minPrice,
 
-                @NotNull(message = "Max price is required") @DecimalMin(value = "0.0", inclusive = false, message = "Max price must be greater than 0") BigDecimal maxPrice,
+        @NotNull(message = "Max price is required")
+        @DecimalMin(value = "0.0", inclusive = false, message = "Max price must be greater than 0")
+        @Digits(integer = 10, fraction = 2)
+        BigDecimal maxPrice,
 
                 @NotNull(message = "Category ID is required") Long categoryId) {
 }
