@@ -51,8 +51,8 @@ docker compose up
 
 ## Health Checks
 
-**Backend endpoint:** `GET /health` (public, no authentication required)  
-Returns: `{"status": "UP", "timestamp": "..."}`
+**Backend endpoint:** `GET /actuator/health` (public, no authentication required)  
+Returns: `{"status": "UP"}` (powered by Spring Boot Actuator, includes database health)
 
 **Docker health checks:** Both PostgreSQL and backend services have health checks configured. Check status with `docker compose ps`. Backend waits for PostgreSQL to be healthy before starting.
 

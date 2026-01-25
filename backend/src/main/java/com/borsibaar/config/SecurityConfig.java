@@ -70,8 +70,8 @@ public class SecurityConfig {
                         // Allow OAuth2 endpoints and public routes
                         .requestMatchers("/", "/error", "/oauth2/**", "/login/oauth2/code/**", "/auth/login/success")
                         .permitAll()
-                        // Health check endpoint
-                        .requestMatchers("/health").permitAll()
+                        // Actuator health endpoint
+                        .requestMatchers("/actuator/health/**").permitAll()
                         // Public API endpoints
                         .requestMatchers(HttpMethod.GET, "/api/organizations/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/organizations").permitAll()
