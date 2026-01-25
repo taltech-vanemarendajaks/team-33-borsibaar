@@ -49,6 +49,13 @@ cd frontend && npm run lint
 docker compose up
 ```
 
+## Health Checks
+
+**Backend endpoint:** `GET /health` (public, no authentication required)  
+Returns: `{"status": "UP", "timestamp": "..."}`
+
+**Docker health checks:** Both PostgreSQL and backend services have health checks configured. Check status with `docker compose ps`. Backend waits for PostgreSQL to be healthy before starting.
+
 ## Key Backend Architecture
 
 The Spring Boot backend follows a layered architecture:
