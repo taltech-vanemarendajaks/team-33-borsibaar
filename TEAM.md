@@ -12,3 +12,7 @@ Development Integration: Feature branches are merged into the dev branch first f
 Peer Review: Every Pull Request requires a thorough review and approval from team members before merging.
 
 Production Release: Once the dev branch is stable and verified, it is merged into the main branch.
+
+Merge strategies used: merge, rebase and squash
+Reason for rebase: adding Spring Doc to the project could be added in a linear manner, no separate commits needed
+Reason for Squash: Health Check branch had couple of fix commits that are not necessary
