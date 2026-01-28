@@ -16,7 +16,7 @@ https://github.com/taltech-vanemarendajaks/team-33-borsibaar
 
 ## Pull Requests
 - PR #1 — Refactor validation and business rules  
-  https://github.com/taltech-vanemarendajaks/team-33-borsibaar/pull/1
+  https://github.com/taltech-vanemarendajaks/team-33-borsibaar/pull/1 - not merged, but closed
 
 - PR #2 — Health check feature  
   https://github.com/taltech-vanemarendajaks/team-33-borsibaar/pull/2
