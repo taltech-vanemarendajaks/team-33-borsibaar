@@ -135,7 +135,7 @@ class JwtAuthenticationFilterTest {
         when(clientRegistrationRepository.findByRegistrationId("google")).thenReturn(googleClient);
 
         // Act & Assert: OAuth2 endpoints should redirect to OAuth provider (302)
-        mockMvc.perform(get("/sb/api/oauth2/authorization/google"))
+        mockMvc.perform(get("/oauth2/authorization/google"))
                 .andExpect(status().is3xxRedirection());
     }
 
