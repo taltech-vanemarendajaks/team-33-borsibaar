@@ -26,17 +26,25 @@ public class AuthController {
 
     @GetMapping("/login/success")
     public void success(HttpServletResponse response, OAuth2AuthenticationToken auth) throws IOException {
-        var result = authService.processOAuthLogin(auth);
+        try {
+            var result = authService.processOAuthLogin(auth);
 
-        Cookie cookie = new Cookie("jwt", result.dto().token());
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true); // HTTPS enabled with domain
-        cookie.setPath("/");
-        cookie.setMaxAge(24 * 60 * 60); // 1 day
-        response.addCookie(cookie);
+            Cookie cookie = new Cookie("jwt", result.dto().token());
+            cookie.setHttpOnly(true);
+            cookie.setSecure(true); // Should be true for production/HTTPS
+            cookie.setPath("/");
+            cookie.setMaxAge(24 * 60 * 60); // 1 day
+            response.addCookie(cookie);
 
-        String redirect = result.needsOnboarding() ? "/onboarding" : "/dashboard";
-        response.sendRedirect(frontendUrl + redirect);
+            String redirect = result.needsOnboarding() ? "/onboarding" : "/dashboard";
+            response.sendRedirect(frontendUrl + redirect);
+
+        } catch (Exception e) {
+            System.err.println("OAuth Login Error: " + e.getMessage());
+            e.printStackTrace();
+
+            response.sendRedirect(frontendUrl + "/login?error=auth_failed");
+        }
     }
 
     @PostMapping("/logout")
