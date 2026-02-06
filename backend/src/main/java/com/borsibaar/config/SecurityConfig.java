@@ -32,7 +32,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
             CorsConfigurationSource corsConfigurationSource) throws Exception {
         DefaultOAuth2AuthorizationRequestResolver defaultResolver = new DefaultOAuth2AuthorizationRequestResolver(
-                clientRegistrationRepository, "/oauth2/authorization");
+                clientRegistrationRepository, "/sb/api/oauth2/authorization");
 
         OAuth2AuthorizationRequestResolver customResolver = new OAuth2AuthorizationRequestResolver() {
             @Override
